@@ -1,0 +1,11 @@
+{
+  "id": "ai-research",
+  "title": "Research",
+  "symbol": "books.vertical",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Use the following text as a research starting point. Respond entirely in the same language as the input text. Identify the central claim or topic, propose 3–5 productive research questions, suggest relevant concepts or debates, and recommend credible directions for further research. Clearly distinguish established information from suggestions that require verification:\n\n{{text}}",
+  "group": "ai",
+  "priority": 76,
+  "enabled": true
+}

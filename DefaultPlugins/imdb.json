@@ -1,0 +1,9 @@
+{
+  "id": "imdb",
+  "title": "IMDb",
+  "symbol": "film",
+  "url": "https://www.imdb.com/find/?q={{text}}",
+  "priority": 53,
+  "maximum_length": 200,
+  "type": "web"
+}

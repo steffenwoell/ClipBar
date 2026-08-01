@@ -1,0 +1,7 @@
+{
+  "type": "group",
+  "id": "ai",
+  "title": "AI",
+  "symbol": "sparkles",
+  "priority": 70
+}

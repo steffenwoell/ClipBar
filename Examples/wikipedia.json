@@ -1,0 +1,10 @@
+{
+  "id": "wikipedia",
+  "title": "Search Wikipedia",
+  "symbol": "book.closed",
+  "url": "https://en.wikipedia.org/w/index.php?search={{text}}",
+  "priority": 50,
+  "maximum_length": 200,
+  "group": "research",
+  "group_symbol": "books.vertical"
+}

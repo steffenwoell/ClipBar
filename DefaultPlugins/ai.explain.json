@@ -1,0 +1,11 @@
+{
+  "id": "ai-explain",
+  "title": "Explain",
+  "symbol": "lightbulb",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Explain the following clearly and concisely. Respond entirely in the same language as the input text. Do not translate unless explicitly instructed to do so. Preserve important nuance and define specialized terms where necessary:\n\n{{text}}",
+  "group": "ai",
+  "priority": 72,
+  "enabled": true
+}

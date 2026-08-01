@@ -1,0 +1,9 @@
+{
+  "id": "duckduckgo-images",
+  "title": "DuckDuckGo Images",
+  "symbol": "photo.on.rectangle",
+  "url": "https://duckduckgo.com/?q={{text}}&iax=images&ia=images",
+  "priority": 56,
+  "maximum_length": 200,
+  "type": "web"
+}

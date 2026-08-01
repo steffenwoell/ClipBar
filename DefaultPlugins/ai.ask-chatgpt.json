@@ -1,0 +1,12 @@
+{
+  "id": "ask.chatgpt",
+  "title": "Ask ChatGPT",
+  "symbol": "message",
+  "type": "ai",
+  "url": "codex://new?prompt={{prompt}}",
+  "prompt": "{{text}}",
+  "priority": 70,
+  "enabled": true,
+  "group": "ai",
+  "group_symbol": "sparkles"
+}

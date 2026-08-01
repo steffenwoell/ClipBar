@@ -1,0 +1,13 @@
+{
+  "id": "ai-translate-english",
+  "title": "Translate to English",
+  "symbol": "character.bubble",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Translate the following text into natural English. Return only the translation:\n\n{{text}}",
+  "priority": 74,
+  "maximum_length": 8000,
+  "enabled": false,
+  "group": "ai",
+  "group_symbol": "sparkles"
+}

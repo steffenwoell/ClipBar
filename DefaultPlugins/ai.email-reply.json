@@ -1,0 +1,11 @@
+{
+  "id": "ai-email-reply",
+  "title": "Email Reply",
+  "symbol": "envelope.badge",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Draft a concise, natural reply to the following email. Respond entirely in the same language as the input text. Match the sender's level of formality, address every substantive point, and avoid unnecessary repetition. Return a complete reply without a subject line:\n\n{{text}}",
+  "group": "ai",
+  "priority": 73,
+  "enabled": true
+}

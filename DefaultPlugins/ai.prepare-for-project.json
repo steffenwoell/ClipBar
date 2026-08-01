@@ -1,0 +1,11 @@
+{
+  "id": "ai-prepare-project",
+  "title": "Prepare for Project",
+  "symbol": "folder.badge.plus",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Turn the following material into a compact project note that can be added to an ongoing ChatGPT project. Respond entirely in the same language as the input text. Use these headings where appropriate: Context, Key Points, Decisions, Open Questions, and Next Steps. Preserve names, dates, constraints, and unresolved issues. Return only the project note:\n\n{{text}}",
+  "group": "ai",
+  "priority": 77,
+  "enabled": true
+}

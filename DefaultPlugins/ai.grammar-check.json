@@ -1,0 +1,11 @@
+{
+  "id": "ai-grammar-check",
+  "title": "Grammar Check",
+  "symbol": "checkmark.circle",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Correct grammar, spelling, and punctuation in the following text. Do not change meaning, tone, style, wording, structure, or level of formality unless strictly necessary.\nReturn your response in exactly this format:\n## Corrections\nProvide a concise bullet list of every change. Group similar changes together where appropriate. If no corrections are necessary, write 'No changes required.'\n## Corrected Text\nReturn the complete corrected text only.\n\n{{text}}",
+  "group": "ai",
+  "priority": 74,
+  "enabled": true
+}

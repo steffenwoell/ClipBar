@@ -1,0 +1,9 @@
+{
+  "id": "google-maps",
+  "title": "Google Maps",
+  "symbol": "map",
+  "url": "https://www.google.com/maps/search/{{text}}",
+  "priority": 52,
+  "maximum_length": 200,
+  "type": "web"
+}

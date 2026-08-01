@@ -1,0 +1,13 @@
+{
+  "id": "ai-summarize",
+  "title": "Summarize",
+  "symbol": "text.alignleft",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Summarize the following text concisely:\n\n{{text}}",
+  "priority": 72,
+  "maximum_length": 12000,
+  "enabled": false,
+  "group": "ai",
+  "group_symbol": "sparkles"
+}

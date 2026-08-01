@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+._*
+__MACOSX/
+
+# Swift/Xcode
+.build/
+DerivedData/
+*.app/
+*.dSYM/
+*.xcuserstate
+xcuserdata/
+
+# Local configuration
+TESTING_LOG.md
+_misc/
+.env
+.env.*
+!.env.example
+
+# Temporary files
+*.log
+*.tmp
+*~

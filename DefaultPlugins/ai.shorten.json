@@ -1,0 +1,11 @@
+{
+  "id": "ai-shorten",
+  "title": "Shorten",
+  "symbol": "arrow.down.right.and.arrow.up.left",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Shorten the following text by about 30 percent while preserving its meaning, tone, key details, and paragraph structure. Return only the revised text:\n\n{{text}}",
+  "group": "ai",
+  "priority": 75,
+  "enabled": true
+}

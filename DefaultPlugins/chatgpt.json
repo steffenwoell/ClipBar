@@ -1,0 +1,10 @@
+{
+  "id": "chatgpt",
+  "title": "Ask ChatGPT",
+  "symbol": "brain",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "{{text}}",
+  "priority": 70,
+  "enabled": true
+}

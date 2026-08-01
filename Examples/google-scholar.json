@@ -1,0 +1,10 @@
+{
+  "id": "google-scholar",
+  "title": "Search Google Scholar",
+  "symbol": "graduationcap",
+  "url": "https://scholar.google.com/scholar?q={{text}}",
+  "priority": 51,
+  "maximum_length": 300,
+  "group": "research",
+  "group_symbol": "books.vertical"
+}

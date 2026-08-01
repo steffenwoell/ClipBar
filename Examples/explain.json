@@ -1,0 +1,13 @@
+{
+  "id": "ai-explain",
+  "title": "Explain",
+  "symbol": "lightbulb",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Explain the following clearly and concisely:\n\n{{text}}",
+  "priority": 71,
+  "maximum_length": 6000,
+  "enabled": false,
+  "group": "ai",
+  "group_symbol": "sparkles"
+}

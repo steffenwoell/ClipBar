@@ -1,0 +1,13 @@
+{
+  "id": "ai-academic-rewrite",
+  "title": "Academic Rewrite",
+  "symbol": "graduationcap",
+  "type": "ai",
+  "url": "https://chatgpt.com/?q={{prompt}}",
+  "prompt": "Rewrite the following passage in clear, concise academic English while preserving its meaning:\n\n{{text}}",
+  "priority": 73,
+  "maximum_length": 8000,
+  "enabled": false,
+  "group": "ai",
+  "group_symbol": "sparkles"
+}
