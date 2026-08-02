@@ -1,6 +1,6 @@
 # ClipBar 1.3.4 “Frija”
 
-A lightweight, highly customizable action bar for selected text on macOS.
+A customizable action bar for selected text on macOS.
 
 ClipBar displays a compact action bar after text selection and provides context-aware actions for search, copying, URLs, email addresses, local paths, AI workflows and extensible JSON plugins.
 
