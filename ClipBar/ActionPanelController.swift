@@ -132,30 +132,9 @@ final class ActionPanelController {
     func hide() {
         model.resetPresentation()
         visibilityGeneration += 1
-        let generation = visibilityGeneration
         cancelAnimations()
-
-        guard panel.isVisible else {
-            panel.alphaValue = 1
-            return
-        }
-
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        if reduceMotion {
-            panel.orderOut(nil)
-            panel.alphaValue = 1
-            return
-        }
-
-        NSAnimationContext.runAnimationGroup { animation in
-            animation.duration = 0.08
-            animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-            guard let self, generation == self.visibilityGeneration else { return }
-            self.panel.orderOut(nil)
-            self.panel.alphaValue = 1
-        }
+        panel.orderOut(nil)
+        panel.alphaValue = 1
     }
 
     private func cancelAnimations() {

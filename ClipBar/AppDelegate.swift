@@ -567,7 +567,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func showAbout() {
         let alert = NSAlert()
         alert.icon = NSApp.applicationIconImage
-        alert.messageText = "ClipBar 1.4 \"Frija\""
+        alert.messageText = "ClipBar 1.4.1 \"Frija\""
         alert.informativeText = "A lightweight contextual action bar for selected text on macOS."
 
         let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 380, height: 145))

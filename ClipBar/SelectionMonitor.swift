@@ -11,6 +11,7 @@ final class SelectionMonitor {
     private var mouseDownMonitor: Any?
     private var globalKeyMonitor: Any?
     private var localKeyMonitor: Any?
+    private var scrollWheelMonitor: Any?
     private var keyEventTap: CFMachPort?
     private var keyEventTapSource: CFRunLoopSource?
     private var workItem: DispatchWorkItem?
@@ -18,6 +19,9 @@ final class SelectionMonitor {
     private var mouseDownLocation: NSPoint?
     private var mouseDownWindowFrame: CGRect?
     private var mouseDownApplicationPID: pid_t?
+    private var preciseScrollDistance: CGFloat = 0
+    private var preciseScrollGestureActive = false
+    private var preciseScrollDismissed = false
 
     private let retryDelays: [TimeInterval] = [
         0.05,
@@ -58,6 +62,10 @@ final class SelectionMonitor {
             self?.readSelectionAfterMouseUp(event)
         }
 
+        scrollWheelMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.scrollWheel]) { [weak self] event in
+            self?.handleScrollWheel(event)
+        }
+
         installKeyboardEventTap()
 
         // Keep NSEvent monitors as a fallback when macOS refuses the event tap.
@@ -76,7 +84,7 @@ final class SelectionMonitor {
     }
 
     func stop() {
-        [mouseDownMonitor, mouseUpMonitor, globalKeyMonitor, localKeyMonitor]
+        [mouseDownMonitor, mouseUpMonitor, globalKeyMonitor, localKeyMonitor, scrollWheelMonitor]
             .compactMap { $0 }
             .forEach(NSEvent.removeMonitor)
 
@@ -84,6 +92,7 @@ final class SelectionMonitor {
         mouseUpMonitor = nil
         globalKeyMonitor = nil
         localKeyMonitor = nil
+        scrollWheelMonitor = nil
 
         if let source = keyEventTapSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
@@ -102,18 +111,26 @@ final class SelectionMonitor {
     private func installKeyboardEventTap() {
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
-            guard type == .keyDown,
-                  let userInfo else {
-                return Unmanaged.passUnretained(event)
-            }
-
-            if event.getIntegerValueField(.eventSourceUserData) == ClipBarSyntheticEventMarker.copy {
+            guard let userInfo else {
                 return Unmanaged.passUnretained(event)
             }
 
             let monitor = Unmanaged<SelectionMonitor>
                 .fromOpaque(userInfo)
                 .takeUnretainedValue()
+
+            if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                monitor.reenableKeyboardEventTap()
+                return Unmanaged.passUnretained(event)
+            }
+
+            guard type == .keyDown else {
+                return Unmanaged.passUnretained(event)
+            }
+
+            if event.getIntegerValueField(.eventSourceUserData) == ClipBarSyntheticEventMarker.copy {
+                return Unmanaged.passUnretained(event)
+            }
 
             monitor.handleKeyboardCGEvent(event)
             return Unmanaged.passUnretained(event)
@@ -138,6 +155,12 @@ final class SelectionMonitor {
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
+    private func reenableKeyboardEventTap() {
+        guard let keyEventTap else { return }
+        CGEvent.tapEnable(tap: keyEventTap, enable: true)
+        Diagnostics.shared.log(.selection, "Keyboard event tap re-enabled")
+    }
+
     private func handleKeyboardCGEvent(_ event: CGEvent) {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         let isCommandC = event.flags.contains(.maskCommand) && keyCode == 8
@@ -156,6 +179,49 @@ final class SelectionMonitor {
         } else {
             reader.cancelPendingClipboardRead()
         }
+        invalidatePendingSelection()
+        onClear?()
+    }
+
+    private func handleScrollWheel(_ event: NSEvent) {
+        guard event.hasPreciseScrollingDeltas else {
+            dismissForScrolling()
+            return
+        }
+
+        // Momentum can continue after the selection and must not dismiss a
+        // newly presented panel. Only deliberate movement in a fresh gesture
+        // contributes to the threshold.
+        guard event.momentumPhase.isEmpty else { return }
+
+        if event.phase.contains(.began) {
+            preciseScrollDistance = 0
+            preciseScrollGestureActive = true
+            preciseScrollDismissed = false
+        }
+
+        if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+            preciseScrollDistance = 0
+            preciseScrollGestureActive = false
+            preciseScrollDismissed = false
+            return
+        }
+
+        guard preciseScrollGestureActive,
+              !preciseScrollDismissed else { return }
+
+        preciseScrollDistance += hypot(
+            event.scrollingDeltaX,
+            event.scrollingDeltaY
+        )
+
+        guard preciseScrollDistance >= 4 else { return }
+        preciseScrollDismissed = true
+        dismissForScrolling()
+    }
+
+    private func dismissForScrolling() {
+        reader.cancelPendingClipboardRead()
         invalidatePendingSelection()
         onClear?()
     }

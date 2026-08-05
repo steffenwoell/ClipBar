@@ -108,16 +108,16 @@ cat > "$TMP_APP/Contents/Info.plist" <<'PLIST'
     <string>APPL</string>
 
     <key>CFBundleShortVersionString</key>
-    <string>1.4</string>
+    <string>1.4.1</string>
 
     <key>CFBundleVersion</key>
-    <string>140</string>
+    <string>141</string>
 
     <key>CFBundleIconFile</key>
     <string>ClipBar</string>
 
     <key>CFBundleGetInfoString</key>
-    <string>ClipBar 1.4 &quot;Frija&quot;</string>
+    <string>ClipBar 1.4.1 &quot;Frija&quot;</string>
 
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
@@ -188,4 +188,4 @@ rm -rf "$OLD_APP"
 touch "$APP"
 open "$APP"
 
-echo "Built and started: ClipBar 1.4 'Frija' at $APP"
+echo "Built and started: ClipBar 1.4.1 'Frija' at $APP"

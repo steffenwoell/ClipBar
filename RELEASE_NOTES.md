@@ -1,5 +1,16 @@
 # Release Notes
 
+## ClipBar 1.4.1 "Frija"
+
+### Changes
+
+- The popup now closes when scrolling with a mouse wheel.
+- Trackpad scrolling closes the popup only after a small deliberate movement; momentum and minimal residual movement are ignored.
+
+### Fixed
+
+- Fixed the popup remaining visible after actions and made Escape dismiss it reliably.
+
 ## ClipBar 1.4 "Frija"
 
 ### New

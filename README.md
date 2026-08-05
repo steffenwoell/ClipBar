@@ -1,4 +1,4 @@
-# ClipBar 1.4 “Frija”
+# ClipBar 1.4.1 “Frija”
 
 A customizable action bar for selected text on macOS.
 
