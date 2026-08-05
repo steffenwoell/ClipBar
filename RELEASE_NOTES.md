@@ -1,5 +1,25 @@
 # Release Notes
 
+## ClipBar 1.4 "Frija"
+
+### New
+
+- Added built-in formatting actions for bold, italic and underlined text. The group and each action can be disabled separately.
+- Added a built-in offline thesaurus for German and English. Suggestions replace editable selections and can be copied from read-only contexts.
+
+### Changes
+
+- Improved source application detection for selections in menu bar app popovers.
+- Reduced the delay before the popup appears for regular webpage selections in Safari.
+- ClipBar now explicitly targets macOS 13 or later.
+
+### Fixed
+
+- Added text selection support for Pages and the Tot menu bar popover.
+- Improved formatting compatibility with Microsoft Word, PowerPoint, Mellel, Ulysses and Markdown editors.
+- Prevented unrelated keyboard shortcuts from being triggered by formatting actions.
+- Diagnostic exports now preserve an existing destination file if the new export cannot be completed.
+
 ## ClipBar 1.3.4 "Frija"
 
 ### Fixed

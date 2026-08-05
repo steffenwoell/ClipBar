@@ -191,6 +191,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         caseItem.submenu = caseMenu
         pluginMenu.addItem(caseItem)
 
+        let formattingMenu = NSMenu()
+        formattingMenu.addItem(
+            builtInPluginMenuItem(
+                id: "text-formatting",
+                title: "Enable Formatting",
+                symbol: "textformat"
+            )
+        )
+        formattingMenu.addItem(.separator())
+
+        for command in TextFormattingCommand.allCases.sorted(by: {
+            $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }) {
+            formattingMenu.addItem(
+                builtInPluginMenuItem(
+                    id: "format-\(command.rawValue)",
+                    title: command.title,
+                    symbol: command.symbol
+                )
+            )
+        }
+
+        let formattingItem = NSMenuItem(
+            title: "Formatting",
+            action: nil,
+            keyEquivalent: ""
+        )
+        formattingItem.image = NSImage(
+            systemSymbolName: "textformat",
+            accessibilityDescription: "Formatting"
+        )
+        formattingItem.submenu = formattingMenu
+        pluginMenu.addItem(formattingItem)
+
+        pluginMenu.addItem(
+            builtInPluginMenuItem(
+                id: "thesaurus",
+                title: "Thesaurus",
+                symbol: "text.book.closed"
+            )
+        )
+
         if !pluginManager.definitions.isEmpty {
             pluginMenu.addItem(.separator())
 
@@ -485,9 +527,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "ClipBar-Diagnostics.log"
         guard panel.runModal() == .OK, let destination = panel.url else { return }
-        try? FileManager.default.removeItem(at: destination)
+
+        let fileManager = FileManager.default
+        let temporaryDestination = destination
+            .deletingLastPathComponent()
+            .appendingPathComponent(
+                ".\(destination.lastPathComponent).\(UUID().uuidString).tmp"
+            )
+
         do {
-            try FileManager.default.copyItem(at: source, to: destination)
+            defer { try? fileManager.removeItem(at: temporaryDestination) }
+
+            try fileManager.copyItem(at: source, to: temporaryDestination)
+
+            if fileManager.fileExists(atPath: destination.path) {
+                _ = try fileManager.replaceItemAt(
+                    destination,
+                    withItemAt: temporaryDestination
+                )
+            } else {
+                try fileManager.moveItem(
+                    at: temporaryDestination,
+                    to: destination
+                )
+            }
         } catch {
             let alert = NSAlert()
             alert.alertStyle = .warning
@@ -504,10 +567,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func showAbout() {
         let alert = NSAlert()
         alert.icon = NSApp.applicationIconImage
-        alert.messageText = "ClipBar 1.3.4 \"Frija\""
+        alert.messageText = "ClipBar 1.4 \"Frija\""
         alert.informativeText = "A lightweight contextual action bar for selected text on macOS."
 
-        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 330, height: 82))
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 380, height: 145))
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
@@ -537,7 +600,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         text.append(website)
         text.append(NSAttributedString(
-            string: "\n\nLicensed under the MIT License",
+            string: """
+
+
+            ClipBar is licensed under the MIT License
+
+            Thesaurus data:
+            OpenThesaurus — GNU LGPL 2.1 or later
+            Princeton WordNet 3.0 — WordNet License
+            Full license texts are included in the app bundle.
+            """,
             attributes: [
                 .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
                 .foregroundColor: NSColor.secondaryLabelColor

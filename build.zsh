@@ -62,21 +62,28 @@ rm -rf "$TMP_APP" "$OLD_APP"
 
 mkdir -p \
     "$TMP_APP/Contents/MacOS" \
-    "$TMP_APP/Contents/Resources/DefaultPlugins"
+    "$TMP_APP/Contents/Resources/DefaultPlugins" \
+    "$TMP_APP/Contents/Resources/ThirdPartyLicenses"
 
 swiftc \
     "$SRC"/*.swift \
+    -target arm64-apple-macosx13.0 \
     -o "$TMP_APP/Contents/MacOS/ClipBar" \
     -framework AppKit \
     -framework SwiftUI \
     -framework ApplicationServices \
     -framework ServiceManagement \
-    -framework QuartzCore
+    -framework QuartzCore \
+    -lsqlite3
 
 cp "$ICON" "$TMP_APP/Contents/Resources/ClipBar.icns"
 cp "$ROOT/LICENSE" "$TMP_APP/Contents/Resources/LICENSE"
 cp "$ROOT/DefaultPlugins"/*.json \
     "$TMP_APP/Contents/Resources/DefaultPlugins/"
+cp "$ROOT/Resources/Thesaurus.sqlite" \
+    "$TMP_APP/Contents/Resources/Thesaurus.sqlite"
+cp "$ROOT/Resources/ThirdPartyLicenses"/*.txt \
+    "$TMP_APP/Contents/Resources/ThirdPartyLicenses/"
 
 cat > "$TMP_APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -101,16 +108,16 @@ cat > "$TMP_APP/Contents/Info.plist" <<'PLIST'
     <string>APPL</string>
 
     <key>CFBundleShortVersionString</key>
-    <string>1.3.4</string>
+    <string>1.4</string>
 
     <key>CFBundleVersion</key>
-    <string>134</string>
+    <string>140</string>
 
     <key>CFBundleIconFile</key>
     <string>ClipBar</string>
 
     <key>CFBundleGetInfoString</key>
-    <string>ClipBar 1.3.4 &quot;Frija&quot;</string>
+    <string>ClipBar 1.4 &quot;Frija&quot;</string>
 
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
@@ -137,6 +144,9 @@ test -f "$TMP_APP/Contents/Resources/ClipBar.icns"
 test -f "$TMP_APP/Contents/Resources/LICENSE"
 test -f "$TMP_APP/Contents/Resources/DefaultPlugins/chatgpt.json"
 test -f "$TMP_APP/Contents/Resources/DefaultPlugins/ai.group.json"
+test -f "$TMP_APP/Contents/Resources/Thesaurus.sqlite"
+test -f "$TMP_APP/Contents/Resources/ThirdPartyLicenses/OpenThesaurus-LGPL.txt"
+test -f "$TMP_APP/Contents/Resources/ThirdPartyLicenses/WordNet-3.0-License.txt"
 
 xattr -cr "$TMP_APP"
 
@@ -178,4 +188,4 @@ rm -rf "$OLD_APP"
 touch "$APP"
 open "$APP"
 
-echo "Built and started: ClipBar 1.3.4 'Frija' at $APP"
+echo "Built and started: ClipBar 1.4 'Frija' at $APP"

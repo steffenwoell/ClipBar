@@ -27,6 +27,16 @@ final class SelectionReader {
         let pointed = element(atAppKitPoint: mouseLocation)
         Diagnostics.shared.log(.selection, "AX hit test completed")
 
+        if isPagesApplication(bundleIdentifier),
+           Diagnostics.shared.selectionLoggingEnabled {
+            logPagesAccessibilitySnapshot(
+                focused: focused,
+                pointed: pointed,
+                mouseLocation: mouseLocation,
+                dragRect: dragRect
+            )
+        }
+
         // NSWorkspace can briefly continue reporting the source application
         // while a cross-application drop completes. Verify the actual AX
         // element under the pointer as a second, independent drag guard.
@@ -63,7 +73,10 @@ final class SelectionReader {
 
         let clipboardFallbackForNonTextApps: Set<String> = [
             "com.microsoft.Powerpoint",
-            "com.apple.Preview"
+            "com.apple.Preview",
+            "com.apple.Pages",
+            "com.apple.iWork.Pages",
+            "com.iconfactory.Tot"
         ]
 
         let allowsClipboardFallbackForNonText =
@@ -150,6 +163,11 @@ final class SelectionReader {
         return bundleIdentifier == "com.openai.chat"
             || bundleIdentifier == "com.openai.ChatGPT"
             || bundleIdentifier.hasPrefix("com.openai.chat")
+    }
+
+    private func isPagesApplication(_ bundleIdentifier: String?) -> Bool {
+        bundleIdentifier == "com.apple.Pages"
+            || bundleIdentifier == "com.apple.iWork.Pages"
     }
 
     private func isExplicitlyNonTextControl(_ element: AXUIElement?) -> Bool {
@@ -412,6 +430,118 @@ final class SelectionReader {
         }
 
         return rect
+    }
+
+    /// Records only Accessibility structure and result metadata. Selected text,
+    /// element titles, descriptions, values, and document contents are never
+    /// written to the diagnostic log.
+    private func logPagesAccessibilitySnapshot(
+        focused: AXUIElement?,
+        pointed: AXUIElement?,
+        mouseLocation: NSPoint,
+        dragRect: CGRect?
+    ) {
+        let gesture = dragRect.map { NSStringFromRect($0) } ?? "double-click"
+        Diagnostics.shared.log(
+            .selection,
+            "Pages AX snapshot mouse=\(NSStringFromPoint(mouseLocation)) gesture=\(gesture)"
+        )
+        logPagesAccessibilityChain(named: "pointed", from: pointed)
+
+        if let focused, let pointed, CFEqual(focused, pointed) {
+            Diagnostics.shared.log(.selection, "Pages AX focused element matches pointed element")
+        } else {
+            logPagesAccessibilityChain(named: "focused", from: focused)
+        }
+    }
+
+    private func logPagesAccessibilityChain(
+        named name: String,
+        from startingElement: AXUIElement?
+    ) {
+        guard var element = startingElement else {
+            Diagnostics.shared.log(.selection, "Pages AX \(name): unavailable")
+            return
+        }
+
+        for depth in 0..<12 {
+            var pid: pid_t = 0
+            let pidResult = AXUIElementGetPid(element, &pid)
+            let role = accessibilityString(kAXRoleAttribute as CFString, from: element)
+            let subrole = accessibilityString(kAXSubroleAttribute as CFString, from: element)
+            let selectedText = accessibilitySelectedTextMetadata(from: element)
+            let selectedRange = accessibilitySelectedRangeMetadata(from: element)
+            let bounds = selectedTextBounds(for: element).map(NSStringFromRect) ?? "unavailable"
+            let attributeFlags = accessibilityAttributeFlags(for: element)
+
+            Diagnostics.shared.log(
+                .selection,
+                "Pages AX \(name)[\(depth)] pid=\(pidResult == .success ? String(pid) : "error:\(pidResult.rawValue)") role=\(role) subrole=\(subrole) selectedText=\(selectedText) selectedRange=\(selectedRange) bounds=\(bounds) attributes=\(attributeFlags)"
+            )
+
+            guard let parent = copyElementAttribute(kAXParentAttribute as CFString, from: element) else {
+                break
+            }
+            element = parent
+        }
+    }
+
+    private func accessibilityString(
+        _ attribute: CFString,
+        from element: AXUIElement
+    ) -> String {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, attribute, &value)
+        guard result == .success else { return "error:\(result.rawValue)" }
+        return (value as? String) ?? "non-string"
+    }
+
+    private func accessibilitySelectedTextMetadata(from element: AXUIElement) -> String {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            element,
+            kAXSelectedTextAttribute as CFString,
+            &value
+        )
+        guard result == .success else { return "error:\(result.rawValue)" }
+        guard let text = value as? String else { return "non-string" }
+        return "length:\(text.count)"
+    }
+
+    private func accessibilitySelectedRangeMetadata(from element: AXUIElement) -> String {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            element,
+            kAXSelectedTextRangeAttribute as CFString,
+            &value
+        )
+        guard result == .success else { return "error:\(result.rawValue)" }
+        guard let value, CFGetTypeID(value) == AXValueGetTypeID() else {
+            return "invalid"
+        }
+
+        var range = CFRange()
+        guard AXValueGetValue(value as! AXValue, .cfRange, &range) else {
+            return "invalid"
+        }
+        return "location:\(range.location),length:\(range.length)"
+    }
+
+    private func accessibilityAttributeFlags(for element: AXUIElement) -> String {
+        var names: CFArray?
+        let result = AXUIElementCopyAttributeNames(element, &names)
+        guard result == .success, let attributes = names as? [String] else {
+            return "error:\(result.rawValue)"
+        }
+
+        let relevant = [
+            kAXSelectedTextAttribute as String,
+            kAXSelectedTextRangeAttribute as String,
+            kAXValueAttribute as String,
+            kAXFocusedAttribute as String,
+            kAXEnabledAttribute as String
+        ]
+        return relevant.filter(attributes.contains).joined(separator: ",")
     }
 
     private func copyElementAttribute(_ attribute: CFString, from element: AXUIElement) -> AXUIElement? {

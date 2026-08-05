@@ -342,5 +342,6 @@ struct Selection: Equatable {
 struct SelectionContext {
     let selection: Selection
     let bundleIdentifier: String?
+    let applicationPID: pid_t
     let detectedAt: CFAbsoluteTime
 }

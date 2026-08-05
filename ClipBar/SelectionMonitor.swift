@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import CoreGraphics
 
 final class SelectionMonitor {
@@ -29,11 +30,25 @@ final class SelectionMonitor {
         mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self else { return }
 
-            self.mouseDownLocation = event.type == .leftMouseDown ? event.locationInWindow : nil
-            self.mouseDownWindowFrame = event.type == .leftMouseDown ? self.frontmostWindowFrame() : nil
-            self.mouseDownApplicationPID = event.type == .leftMouseDown
-                ? NSWorkspace.shared.frontmostApplication?.processIdentifier
+            let isLeftMouseDown = event.type == .leftMouseDown
+            let location = event.locationInWindow
+            let pointedPID = isLeftMouseDown
+                ? self.processIdentifier(atAppKitPoint: location)
                 : nil
+            let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+
+            self.mouseDownLocation = isLeftMouseDown ? location : nil
+            self.mouseDownWindowFrame = isLeftMouseDown ? self.frontmostWindowFrame() : nil
+            self.mouseDownApplicationPID = isLeftMouseDown
+                ? pointedPID ?? frontmostPID
+                : nil
+
+            if isLeftMouseDown {
+                Diagnostics.shared.log(
+                    .selection,
+                    "Mouse down source pointedPID=\(Self.pidDescription(pointedPID)) frontmostPID=\(Self.pidDescription(frontmostPID)) selectedPID=\(Self.pidDescription(self.mouseDownApplicationPID))"
+                )
+            }
             self.reader.cancelPendingClipboardRead()
             self.invalidatePendingSelection()
             self.onClear?()
@@ -199,14 +214,24 @@ final class SelectionMonitor {
         mouseDownApplicationPID = nil
         let end = event.locationInWindow
         let frontmostApplication = NSWorkspace.shared.frontmostApplication
-        let bundleIdentifier = frontmostApplication?.bundleIdentifier
+        let pointedApplicationPID = processIdentifier(atAppKitPoint: end)
+        let finalApplicationPID = pointedApplicationPID
+            ?? frontmostApplication?.processIdentifier
+        let bundleIdentifier = initialApplicationPID.flatMap {
+            NSRunningApplication(processIdentifier: $0)?.bundleIdentifier
+        } ?? frontmostApplication?.bundleIdentifier
         let selectionStartedAt = CFAbsoluteTimeGetCurrent()
+
+        Diagnostics.shared.log(
+            .selection,
+            "Mouse up source pointedPID=\(Self.pidDescription(pointedApplicationPID)) frontmostPID=\(Self.pidDescription(frontmostApplication?.processIdentifier)) selectedPID=\(Self.pidDescription(finalApplicationPID)) bundle=\(bundleIdentifier ?? "unknown")"
+        )
 
         // A drag that starts in one process and ends in another is application
         // drag and drop, not text selection. Without this check, dropping a
         // Finder item into an editor can reuse that editor's old AX selection.
         guard let initialApplicationPID,
-              initialApplicationPID == frontmostApplication?.processIdentifier else {
+              initialApplicationPID == finalApplicationPID else {
             Diagnostics.shared.log(
                 .selection,
                 "Rejected cross-application drag or incomplete mouse gesture"
@@ -283,6 +308,32 @@ final class SelectionMonitor {
         )
     }
 
+    private func processIdentifier(atAppKitPoint point: NSPoint) -> pid_t? {
+        let primaryTop = NSScreen.screens.first?.frame.maxY ?? 0
+        let systemWide = AXUIElementCreateSystemWide()
+        var element: AXUIElement?
+
+        guard AXUIElementCopyElementAtPosition(
+            systemWide,
+            Float(point.x),
+            Float(primaryTop - point.y),
+            &element
+        ) == .success,
+        let element else {
+            return nil
+        }
+
+        var pid: pid_t = 0
+        guard AXUIElementGetPid(element, &pid) == .success else {
+            return nil
+        }
+        return pid
+    }
+
+    private static func pidDescription(_ pid: pid_t?) -> String {
+        pid.map(String.init) ?? "unavailable"
+    }
+
     private func attemptSelection(
         requestID: Int,
         attempt: Int,
@@ -323,6 +374,7 @@ final class SelectionMonitor {
                     SelectionContext(
                         selection: selection,
                         bundleIdentifier: bundleIdentifier,
+                        applicationPID: originatingApplicationPID,
                         detectedAt: detectedAt
                     )
                 )

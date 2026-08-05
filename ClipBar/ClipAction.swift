@@ -202,6 +202,33 @@ struct SentenceCaseAction: CaseConversionAction {
     }
 }
 
+struct TextFormattingAction: ClipAction {
+    let command: TextFormattingCommand
+
+    var id: String { "format-\(command.rawValue)" }
+    var title: String { command.title }
+    var symbol: String { command.symbol }
+
+    func priority(for context: SelectionContext) -> Int {
+        ActionPriority.secondaryContextual + 3
+    }
+
+    func isAvailable(for context: SelectionContext) -> Bool {
+        !context.selection.trimmedText.isEmpty
+            && TextFormattingController.shared.isAvailable(
+                command,
+                in: context.applicationPID
+            )
+    }
+
+    func perform(with context: SelectionContext) {
+        TextFormattingController.shared.perform(
+            command,
+            in: context.applicationPID
+        )
+    }
+}
+
 struct EmailAction: ClipAction {
     let id = "email"
     let title = "New Email"
@@ -238,6 +265,9 @@ final class ActionRegistry {
     private let caseConversionActions: [any ClipAction] = [
         UppercaseAction(), LowercaseAction(), TitleCaseAction(), SentenceCaseAction()
     ]
+
+    private let textFormattingActions: [any ClipAction] =
+        TextFormattingCommand.allCases.map(TextFormattingAction.init)
 
     private let optionalBuiltInActionIDs: Set<String> = [
         "word-count",
@@ -279,6 +309,70 @@ final class ActionRegistry {
                         symbol: "textformat",
                         priority: ActionPriority.secondaryContextual + 2,
                         children: availableCaseActions
+                    )
+                )
+            }
+        }
+
+        let shouldInspectFormatting = !(
+            context.bundleIdentifier == "com.apple.Safari"
+                && context.selection.source == .clipboardFallback
+        )
+
+        if PluginManager.shared.isEnabled(id: "text-formatting"),
+           shouldInspectFormatting {
+            let availableFormattingActions = textFormattingActions
+                .filter { PluginManager.shared.isEnabled(id: $0.id) }
+                .filter { $0.isAvailable(for: context) }
+                .map { item(for: $0, context: context, afterPerform: afterPerform) }
+                .sorted { lhs, rhs in
+                    lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+                }
+
+            if availableFormattingActions.count == 1,
+               let onlyAction = availableFormattingActions.first {
+                items.append(onlyAction)
+            } else if !availableFormattingActions.isEmpty {
+                items.append(
+                    ClipActionItem(
+                        id: "group.text-formatting",
+                        title: "Formatting",
+                        symbol: "textformat",
+                        priority: ActionPriority.secondaryContextual + 3,
+                        children: availableFormattingActions
+                    )
+                )
+            }
+        }
+
+        if PluginManager.shared.isEnabled(id: "thesaurus"),
+           isThesaurusSelection(context.selection) {
+            let suggestions = ThesaurusStore.shared.suggestions(
+                for: context.selection.trimmedText
+            )
+            if !suggestions.isEmpty {
+                let children = suggestions.map { suggestion in
+                    ClipActionItem(
+                        id: "thesaurus.\(suggestion)",
+                        title: suggestion,
+                        symbol: "arrow.trianglehead.2.clockwise.rotate.90",
+                        priority: ActionPriority.secondaryContextual + 4,
+                        perform: {
+                            SelectionReplacementController.shared.replaceOrCopy(
+                                suggestion,
+                                in: context
+                            )
+                            DispatchQueue.main.async { afterPerform() }
+                        }
+                    )
+                }
+                items.append(
+                    ClipActionItem(
+                        id: "group.thesaurus",
+                        title: "Thesaurus",
+                        symbol: "text.book.closed",
+                        priority: ActionPriority.secondaryContextual + 4,
+                        children: children
                     )
                 )
             }
@@ -327,6 +421,18 @@ final class ActionRegistry {
         }
 
         return items.sorted(by: itemSort)
+    }
+
+    private func isThesaurusSelection(_ selection: Selection) -> Bool {
+        let text = selection.trimmedText
+        return !text.isEmpty
+            && text.count <= 80
+            && text.split(whereSeparator: \Character.isWhitespace).count <= 4
+            && selection.detectedDOI == nil
+            && selection.detectedISBN == nil
+            && selection.detectedURL == nil
+            && selection.detectedEmailAddress == nil
+            && selection.detectedFileURL == nil
     }
 
     private func item(

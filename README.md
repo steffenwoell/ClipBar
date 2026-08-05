@@ -1,4 +1,4 @@
-# ClipBar 1.3.4 “Frija”
+# ClipBar 1.4 “Frija”
 
 A customizable action bar for selected text on macOS.
 
@@ -55,6 +55,11 @@ ClipBar is designed with privacy as a core principle.
 - Crash recovery, when enabled, uses macOS LaunchAgents and does not transmit any information.
 
 External plugins and websites may have their own privacy policies.
+
+The built-in Thesaurus works offline. German synonym data is provided by
+[OpenThesaurus](https://www.openthesaurus.de/) under the GNU LGPL 2.1 or later;
+English synonym data is derived from Princeton WordNet 3.0. The corresponding
+license texts are included in the application bundle.
 
 ## Author
 
