@@ -46,6 +46,7 @@ final class ActionPanelController {
         visibilityGeneration += 1
         let generation = visibilityGeneration
         cancelAnimations()
+        dismissAttachedPopovers()
 
         let latencyMS = (CFAbsoluteTimeGetCurrent() - context.detectedAt) * 1000
         Diagnostics.shared.log(.panel, String(format: "Preparing panel after %.1f ms", latencyMS))
@@ -130,11 +131,22 @@ final class ActionPanelController {
     }
 
     func hide() {
+        dismissAttachedPopovers()
         model.resetPresentation()
+        model.actions = []
+        hostingView.rootView = ActionBarView(model: model)
+        hostingView.layoutSubtreeIfNeeded()
         visibilityGeneration += 1
         cancelAnimations()
         panel.orderOut(nil)
         panel.alphaValue = 1
+    }
+
+    private func dismissAttachedPopovers() {
+        for childWindow in panel.childWindows ?? [] {
+            panel.removeChildWindow(childWindow)
+            childWindow.orderOut(nil)
+        }
     }
 
     private func cancelAnimations() {

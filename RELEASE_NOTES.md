@@ -1,5 +1,12 @@
 # Release Notes
 
+## ClipBar 1.4.2 "Frija"
+
+### Fixed
+
+- Fixed the active popup not closing on keyboard input or Escape when the primary keyboard event tap stopped delivering events.
+- Fixed visual glitches on the next popup activation by explicitly dismissing attached submenu windows and rebuilding their presentation state.
+
 ## ClipBar 1.4.1 "Frija"
 
 ### Changes

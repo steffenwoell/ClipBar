@@ -22,6 +22,8 @@ final class SelectionMonitor {
     private var preciseScrollDistance: CGFloat = 0
     private var preciseScrollGestureActive = false
     private var preciseScrollDismissed = false
+    private var lastKeyboardEventKeyCode: Int64?
+    private var lastKeyboardEventTimestamp: UInt64?
 
     private let retryDelays: [TimeInterval] = [
         0.05,
@@ -68,12 +70,11 @@ final class SelectionMonitor {
 
         installKeyboardEventTap()
 
-        // Keep NSEvent monitors as a fallback when macOS refuses the event tap.
-        if keyEventTap == nil {
-            globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
-                guard !Self.isInternalCopyEvent(event) else { return }
-                self?.handleKeyboardInput(event)
-            }
+        // Keep this monitor active even when the event tap was installed.
+        // macOS can leave an event tap present but stop delivering through it.
+        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard !Self.isInternalCopyEvent(event) else { return }
+            self?.handleKeyboardInput(event)
         }
 
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
@@ -164,16 +165,38 @@ final class SelectionMonitor {
     private func handleKeyboardCGEvent(_ event: CGEvent) {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         let isCommandC = event.flags.contains(.maskCommand) && keyCode == 8
-        handleKeyboardInput(isUserCopy: isCommandC)
+        handleKeyboardInput(
+            keyCode: keyCode,
+            timestamp: event.timestamp,
+            isUserCopy: isCommandC
+        )
     }
 
     private func handleKeyboardInput(_ event: NSEvent? = nil) {
+        let keyCode = Int64(event?.keyCode ?? 0)
         let isUserCopy = event?.modifierFlags.contains(.command) == true
             && event?.keyCode == 8
-        handleKeyboardInput(isUserCopy: isUserCopy)
+        handleKeyboardInput(
+            keyCode: keyCode,
+            timestamp: event?.cgEvent?.timestamp,
+            isUserCopy: isUserCopy
+        )
     }
 
-    private func handleKeyboardInput(isUserCopy: Bool) {
+    private func handleKeyboardInput(
+        keyCode: Int64,
+        timestamp: UInt64?,
+        isUserCopy: Bool
+    ) {
+        if let timestamp,
+           lastKeyboardEventKeyCode == keyCode,
+           lastKeyboardEventTimestamp == timestamp {
+            return
+        }
+
+        lastKeyboardEventKeyCode = keyCode
+        lastKeyboardEventTimestamp = timestamp
+
         if isUserCopy {
             reader.userDidRequestCopy()
         } else {
