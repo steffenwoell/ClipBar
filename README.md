@@ -1,4 +1,4 @@
-# ClipBar 1.4.1 “Frija”
+# ClipBar 1.4.2 “Frija”
 
 ClipBar displays a compact action bar after text selection and provides context-aware actions for search, copying, URLs, email addresses, local paths, AI workflows and extensible JSON plugins.
 

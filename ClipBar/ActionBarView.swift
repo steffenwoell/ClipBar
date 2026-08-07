@@ -4,8 +4,10 @@ import SwiftUI
 final class ActionBarModel: ObservableObject {
     @Published var actions: [ClipActionItem] = []
     @Published var presentationID = UUID()
+    @Published var activeGroupID: String?
 
     func resetPresentation() {
+        activeGroupID = nil
         presentationID = UUID()
     }
 }
@@ -18,7 +20,7 @@ struct ActionBarView: View {
         HStack(spacing: 2) {
             ForEach(Array(model.actions.enumerated()), id: \.element.id) { index, action in
                 if index > 0 { divider }
-                ActionButton(action: action)
+                ActionButton(action: action, model: model)
             }
         }
         .id(model.presentationID)
@@ -60,18 +62,29 @@ struct ActionBarView: View {
 
 private struct ActionButton: View {
     let action: ClipActionItem
+    @ObservedObject var model: ActionBarModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
-    @State private var showGroup = false
 
     private var highlighted: Bool {
-        isHovered || showGroup
+        isHovered || model.activeGroupID == action.id
+    }
+
+    private var showGroup: Binding<Bool> {
+        Binding(
+            get: { model.activeGroupID == action.id },
+            set: { isPresented in
+                model.activeGroupID = isPresented ? action.id : nil
+            }
+        )
     }
 
     var body: some View {
         Button {
             if action.isGroup {
-                showGroup.toggle()
+                model.activeGroupID = model.activeGroupID == action.id
+                    ? nil
+                    : action.id
             } else {
                 action.perform()
             }
@@ -101,7 +114,7 @@ private struct ActionButton: View {
                 }
             }
         }
-        .popover(isPresented: $showGroup, arrowEdge: .bottom) {
+        .popover(isPresented: showGroup, arrowEdge: .bottom) {
             GroupPopover(title: action.title, actions: action.children)
         }
     }
